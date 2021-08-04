@@ -1,6 +1,10 @@
 from django.db import models
-
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
+
 
 USER_TYPE_CHOICES = (
     ('partner', 'Поставщик'),
@@ -9,14 +13,14 @@ USER_TYPE_CHOICES = (
 )
 
 
-class User(AbstractUser):
+class Account(AbstractUser):
 
     company = models.CharField(verbose_name='Компания', max_length=40, blank=True)
     position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
     type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=7, default='client')
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.username}'
 
     class Meta(AbstractUser.Meta):
         verbose_name = 'Пользователь'
@@ -26,7 +30,7 @@ class User(AbstractUser):
 
 
 class Contact(models.Model):
-    user = models.ForeignKey(User, verbose_name='Пользователь',
+    user = models.ForeignKey(Account, verbose_name='Пользователь',
                              related_name='contacts',
                              on_delete=models.CASCADE)
 
@@ -44,3 +48,9 @@ class Contact(models.Model):
 
     def __str__(self):
         return f'г.{self.city}, ул.{self.street}, тел.{self.phone}'
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_token(instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
