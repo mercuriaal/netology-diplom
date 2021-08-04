@@ -9,11 +9,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['username', 'email', 'password', 'password2']
+        fields = ['first_name', 'last_name', 'email', 'password', 'password2', 'company', 'position']
         extra_kwargs = {'password': {'write_only': True}}
 
     def save(self, **kwargs):
-        user = Account(username=self.validated_data['username'], email=self.validated_data['email'])
+        user = Account(first_name=self.validated_data.get('first_name'), last_name=self.validated_data.get('last_name'),
+                       email=self.validated_data.get('email'), company=self.validated_data.get('company'))
         password = self.validated_data['password']
         password2 = self.validated_data['password2']
 
@@ -23,3 +24,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+    def validate(self, data):
+        if not all([data.get('first_name'), data.get('last_name'), data.get('email'), data.get('company')]):
+            raise serializers.ValidationError('Заполните необходимые данные для регистрации')
+        return data
