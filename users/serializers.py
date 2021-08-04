@@ -3,6 +3,13 @@ from rest_framework import serializers
 from .models import Account
 
 
+class AccountSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Account
+        fields = ['first_name', 'last_name', 'email', 'company', 'position']
+
+
 class RegisterSerializer(serializers.ModelSerializer):
 
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
