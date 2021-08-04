@@ -1,3 +1,4 @@
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
@@ -15,12 +16,27 @@ USER_TYPE_CHOICES = (
 
 class Account(AbstractUser):
 
+    REQUIRED_FIELDS = []
+    USERNAME_FIELD = 'email'
+
+    username_validator = UnicodeUsernameValidator()
+
+    email = models.EmailField(unique=True)
     company = models.CharField(verbose_name='Компания', max_length=40, blank=True)
     position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
     type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=7, default='client')
+    username = models.CharField(
+        ('username'),
+        max_length=150,
+        help_text=('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+        validators=[username_validator],
+        error_messages={
+            'unique': ("A user with that username already exists."),
+        },
+    )
 
     def __str__(self):
-        return f'{self.username}'
+        return f'{self.email}'
 
     class Meta(AbstractUser.Meta):
         verbose_name = 'Пользователь'
