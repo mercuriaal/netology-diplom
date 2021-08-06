@@ -24,7 +24,7 @@ class Account(AbstractUser):
     email = models.EmailField(unique=True)
     company = models.CharField(verbose_name='Компания', max_length=40, blank=True)
     position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
-    type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=7, default='client')
+    type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=10, default='client')
     username = models.CharField(
         ('username'),
         max_length=150,
