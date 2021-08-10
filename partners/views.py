@@ -2,6 +2,7 @@ import yaml
 import os
 from pprint import pprint
 
+from django.db.models import Sum, F
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
@@ -10,6 +11,8 @@ from rest_framework.mixins import UpdateModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from clients.models import Order
+from clients.serializers import OrderSerializer
 from partners.models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter
 from partners.serializers import ShopSerializer
 
@@ -81,3 +84,19 @@ def upload_products(request):
     else:
         raise ValidationError('Пользователь не привязан к магазину')
     return Response('Товары загружены в базу данных')
+
+
+class PartnerOrders(ListAPIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, Partner]
+    serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        queryset = Order.objects.filter(
+            ordered_items__product_info__shop__user_id=self.request.user.id).exclude(state='basket').prefetch_related(
+            'ordered_items__product_info__product__category',
+            'ordered_items__product_info__product_parameters__parameter').select_related('contact').annotate(
+            total_sum=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
+
+        return queryset
