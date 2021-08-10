@@ -6,7 +6,7 @@ from users.models import Account
 class Shop(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название')
     url = models.URLField(verbose_name='Ссылка', null=True, blank=True)
-    file = models.FileField(upload_to='partners/data')
+    file = models.FileField(upload_to='partners/data', null=True)
     state = models.BooleanField(verbose_name='Cтатус получения заказов', default=True)
 
     user = models.OneToOneField(Account, verbose_name='Пользователь', blank=True, null=True, on_delete=models.CASCADE)
