@@ -1,13 +1,24 @@
 from rest_framework import serializers
 
-from .models import Account
+from .models import Account, Contact
 
 
 class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ['first_name', 'last_name', 'email', 'company', 'position']
+        fields = ['id', 'first_name', 'last_name', 'email', 'company', 'position']
+        read_only_fields = ('id',)
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = ('id', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'user', 'phone')
+        read_only_fields = ('id',)
+        extra_kwargs = {
+            'user': {'write_only': True}
+        }
 
 
 class RegisterSerializer(serializers.ModelSerializer):
