@@ -16,9 +16,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from clients.urls import basket_router
+from users.urls import contact_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/account/', include('users.urls'), name='account_api'),
-    path('api/v1/partner/', include('partners.urls'), name='partner_api')
+    path('api/v1/partner/', include('partners.urls'), name='partner_api'),
+    path('api/v1/client/', include('clients.urls'), name='client_api'),
+    path('api/v1/client/', include(basket_router.urls)),
+    path('api/v1/account', include(contact_router.urls))
 ]
