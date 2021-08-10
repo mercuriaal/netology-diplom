@@ -17,12 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 
-from partners.urls import partners_router
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/account/', include('users.urls'), name='account_api'),
-    path('api/v1/partner/', include(partners_router.urls)),
     path('api/v1/partner/', include('partners.urls'), name='partner_api')
 ]
