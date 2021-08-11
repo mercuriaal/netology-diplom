@@ -12,13 +12,17 @@ class AccountSerializer(serializers.ModelSerializer):
 
 
 class ContactSerializer(serializers.ModelSerializer):
+
+    user = AccountSerializer(read_only=True)
+
     class Meta:
         model = Contact
         fields = ('id', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'user', 'phone')
         read_only_fields = ('id',)
-        extra_kwargs = {
-            'user': {'write_only': True}
-        }
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
