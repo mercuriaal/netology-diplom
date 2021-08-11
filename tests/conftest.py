@@ -13,3 +13,11 @@ def user_factory():
     def factory(**kwargs):
         return baker.make("Account", **kwargs)
     return factory
+
+
+@pytest.fixture()
+def contact_factory():
+    def factory(**kwargs):
+        return baker.make("Contact", **kwargs)
+
+    return factory
