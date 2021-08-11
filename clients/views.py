@@ -1,11 +1,15 @@
 from django.db.models import F, Sum
+from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from clients.filters import ProductInfoFilter
+from clients.filters import ProductInfoFilter, ListOrderFilterBackEnd, PostOrderFilterBackEnd, BasketOwnerFilterBackEnd, \
+    ListBasketFilterBackEnd
 from clients.models import OrderItem, Order
 from clients.serializers import OrderSerializer, OrderItemSerializer, OrderItemUpdateSerializer
 from partners.models import ProductInfo
@@ -23,24 +27,30 @@ class ProductInfoView(ListAPIView):
     permission_classes = [IsAuthenticated, Client]
     authentication_classes = [TokenAuthentication]
     filterset_class = ProductInfoFilter
+    filter_backends = [DjangoFilterBackend]
 
 
 class BasketView(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin):
 
-    permission_classes = [IsAuthenticated, Client ]
+    permission_classes = [IsAuthenticated, Client]
     authentication_classes = [TokenAuthentication]
-    queryset = OrderItem.objects.all()
 
     def get_queryset(self):
         if self.action in ['list']:
-            queryset = Order.objects.filter(user_id=self.request.user.id, state='basket').prefetch_related(
-                                            'ordered_items__product_info__product__category',
-                                            'ordered_items__product_info__product_parameters__parameter').annotate(
-                                            total_sum=Sum(F(
-                                                'ordered_items__quantity') * F(
-                                                'ordered_items__product_info__price'))).distinct()
+            queryset = Order.objects.all()
         else:
-            queryset = OrderItem.objects.filter(order__user=self.request.user.id)
+            queryset = OrderItem.objects.all()
+        return queryset
+
+    def filter_queryset(self, queryset):
+        filter_backends = [BasketOwnerFilterBackEnd]
+
+        if self.action in ['list']:
+            filter_backends = [ListBasketFilterBackEnd]
+
+        for backend in list(filter_backends):
+            queryset = backend().filter_queryset(self.request, queryset, view=self)
+
         return queryset
 
     def get_serializer_class(self):
@@ -59,3 +69,23 @@ class BasketView(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
         return super().create(request, *args, **kwargs)
 
 
+class OrderView(ListCreateAPIView):
+
+    serializer_class = OrderSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, Client]
+
+    def get_queryset(self):
+        queryset = Order.objects.filter(user=self.request.user.id)
+        return queryset
+
+    def filter_queryset(self, queryset):
+        filter_backends = [ListOrderFilterBackEnd]
+
+        if 'contact' in self.request.data:
+            filter_backends = [PostOrderFilterBackEnd]
+
+        for backend in list(filter_backends):
+            queryset = backend().filter_queryset(self.request, queryset, view=self)
+
+        return queryset
