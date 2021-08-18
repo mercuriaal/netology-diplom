@@ -1,15 +1,17 @@
 from django.db import models
 
+from partners.storage import OverwriteStorage
 from users.models import Account
 
 
 class Shop(models.Model):
     name = models.CharField(max_length=50, verbose_name='Название')
     url = models.URLField(verbose_name='Ссылка', null=True, blank=True)
-    file = models.FileField(upload_to='partners/data', null=True)
+    file = models.FileField(upload_to='partners/data', null=True, storage=OverwriteStorage())
     state = models.BooleanField(verbose_name='Cтатус получения заказов', default=True)
 
-    user = models.OneToOneField(Account, verbose_name='Пользователь', blank=True, null=True, on_delete=models.CASCADE)
+    user = models.OneToOneField(Account, verbose_name='Пользователь', blank=True, null=True, on_delete=models.CASCADE,
+                                related_name='shop')
 
     class Meta:
         verbose_name = 'Магазин'
@@ -57,9 +59,9 @@ class ProductInfo(models.Model):
     price = models.PositiveIntegerField(verbose_name='Цена')
     price_rrc = models.PositiveIntegerField(verbose_name='Рекомендуемая розничная цена')
 
-    product = models.ForeignKey(Product, to_field='special_id', verbose_name='Продукт', related_name='product_infos',
+    product = models.ForeignKey(Product, to_field='special_id', verbose_name='Продукт', related_name='product_info',
                                 blank=True, on_delete=models.CASCADE)
-    shop = models.ForeignKey(Shop, verbose_name='Магазин', related_name='product_infos', blank=True,
+    shop = models.ForeignKey(Shop, verbose_name='Магазин', related_name='product_info', blank=True,
                              on_delete=models.CASCADE)
 
     class Meta:
