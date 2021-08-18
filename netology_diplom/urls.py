@@ -25,5 +25,6 @@ urlpatterns = [
     path('api/v1/partner/', include('partners.urls'), name='partner_api'),
     path('api/v1/client/', include('clients.urls'), name='client_api'),
     path('api/v1/client/', include(client_router.urls)),
-    path('api/v1/account/', include(contact_router.urls))
+    path('api/v1/account/', include(contact_router.urls)),
+    path('api/v1/password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset'))
 ]
