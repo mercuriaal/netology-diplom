@@ -14,6 +14,7 @@ from clients.serializers import OrderSerializer, OrderItemSerializer, OrderItemU
 from partners.models import ProductInfo
 from partners.serializers import ProductInfoSerializer
 from users.permissions import Client
+from users.signals import new_order, order_confirmation
 
 
 class ProductInfoView(ListAPIView):
@@ -101,6 +102,8 @@ class OrderView(GenericViewSet, ListModelMixin, UpdateModelMixin):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         self.get_queryset().update(state='new')
+        new_order.send(sender=self.__class__, user_id=request.user.id)
+        order_confirmation.send(sender=self.__class__, user_id=request.user.id)
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
