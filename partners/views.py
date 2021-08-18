@@ -10,6 +10,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from clients.models import Order
 from clients.serializers import OrderSerializer
@@ -17,6 +18,7 @@ from partners.models import Shop, Category, Product, ProductInfo, Parameter, Pro
 from partners.serializers import ShopSerializer
 
 from users.permissions import Partner, Owner
+from users.signals import products_update
 
 
 class PartnerStateView(ListAPIView, UpdateModelMixin):
@@ -34,50 +36,56 @@ class PartnerStateView(ListAPIView, UpdateModelMixin):
         return queryset
 
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated, Partner])
-def upload_products(request):
+class UploadProduct(APIView):
 
-    user_shop = Shop.objects.filter(user=request.user)
-    import_file = request.data['file']
-    if user_shop.exists():
-        user_shop.update(file=import_file)
-        with open(str(user_shop.get().file),  encoding='utf-8') as file:
-            upload = yaml.load(file, Loader=yaml.FullLoader)
-            pprint(upload)
+    permission_classes = [IsAuthenticated, Partner]
+    authentication_classes = [TokenAuthentication]
 
-        if not all([upload.get('categories'), upload.get('goods'), upload.get('shop')]):
-            raise ValidationError('В файле отсутствуют необходимые поля')
+    def post(self, request):
 
-        if not all([upload.get('categories')[0].get('id'), upload.get('categories')[0].get('name'),
-                    upload.get('goods')[0].get('id'), upload.get('goods')[0].get('category'),
-                    upload.get('goods')[0].get('model'), upload.get('goods')[0].get('name'),
-                    upload.get('goods')[0].get('parameters'), upload.get('goods')[0].get('price'),
-                    upload.get('goods')[0].get('price_rrc'), upload.get('goods')[0].get('quantity')]):
-            raise ValidationError('В файле отсутствуют необходимые поля')
+        user_shop = Shop.objects.filter(user=request.user)
+        import_file = request.data['file']
+        if user_shop.exists():
+            obj = user_shop.get()
+            obj.file = import_file
+            obj.save()
+            with open(str(user_shop.get().file),  encoding='utf-8') as file:
+                upload = yaml.load(file, Loader=yaml.FullLoader)
 
-        shop = Shop.objects.get(user=request.user)
-        for item in upload['categories']:
-            category, _ = Category.objects.get_or_create(special_id=item['id'], name=item['name'])
-            category.shops.add(shop.id)
-            category.save()
+            if not all([upload.get('categories'), upload.get('goods'), upload.get('shop')]):
+                raise ValidationError('В файле отсутствуют необходимые поля')
 
-        ProductInfo.objects.filter(shop_id=shop.id).delete()
-        for item in upload['goods']:
-            category = Category.objects.get(special_id=item['category'])
-            product, _ = Product.objects.get_or_create(name=item['name'], category=category, special_id=item['id'])
-            product_info, _ = ProductInfo.objects.get_or_create(model=item['model'], quantity=item['quantity'],
-                                                                price=item['price'], price_rrc=item['price_rrc'],
-                                                                product=product, shop=shop)
+            if not all([upload.get('categories')[0].get('id'), upload.get('categories')[0].get('name'),
+                        upload.get('goods')[0].get('id'), upload.get('goods')[0].get('category'),
+                        upload.get('goods')[0].get('model'), upload.get('goods')[0].get('name'),
+                        upload.get('goods')[0].get('parameters'), upload.get('goods')[0].get('price'),
+                        upload.get('goods')[0].get('price_rrc'), upload.get('goods')[0].get('quantity')]):
+                raise ValidationError('В файле отсутствуют необходимые поля')
 
-            for name, value in item['parameters'].items():
-                parameter, _ = Parameter.objects.get_or_create(name=name)
-                prod_param, _ = ProductParameter.objects.get_or_create(product_info=product_info, parameter=parameter,
-                                                                       value=value)
+            shop = Shop.objects.get(user=request.user)
+            for item in upload['categories']:
+                category, _ = Category.objects.get_or_create(special_id=item['id'], name=item['name'])
+                category.shops.add(shop.id)
+                category.save()
 
-    else:
-        raise ValidationError('Пользователь не привязан к магазину')
-    return Response('Товары загружены в базу данных')
+            ProductInfo.objects.filter(shop_id=shop.id).delete()
+            for item in upload['goods']:
+                category = Category.objects.get(special_id=item['category'])
+                product, _ = Product.objects.get_or_create(name=item['name'], category=category, special_id=item['id'])
+                product_info, _ = ProductInfo.objects.get_or_create(model=item['model'], quantity=item['quantity'],
+                                                                    price=item['price'], price_rrc=item['price_rrc'],
+                                                                    product=product, shop=shop)
+
+                for name, value in item['parameters'].items():
+                    parameter, _ = Parameter.objects.get_or_create(name=name)
+                    prod_param, _ = ProductParameter.objects.get_or_create(product_info=product_info, parameter=parameter,
+                                                                           value=value)
+
+            products_update.send(sender=self.__class__, user_id=request.user.id)
+
+        else:
+            raise ValidationError('Пользователь не привязан к магазину')
+        return Response('Товары загружены в базу данных')
 
 
 class PartnerOrders(ListAPIView):
