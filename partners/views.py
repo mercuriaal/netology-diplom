@@ -25,9 +25,6 @@ class PartnerStateView(ListAPIView, UpdateModelMixin):
     permission_classes = [IsAuthenticated, Owner, Partner]
     serializer_class = ShopSerializer
 
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
 
@@ -44,11 +41,8 @@ def upload_products(request):
     user_shop = Shop.objects.filter(user=request.user)
     import_file = request.data['file']
     if user_shop.exists():
-        shop = user_shop.get()
-        os.remove(str(shop.file))
-        shop.file = import_file
-        shop.save()
-        with open(str(shop.file),  encoding='utf-8') as file:
+        user_shop.update(file=import_file)
+        with open(str(user_shop.get().file),  encoding='utf-8') as file:
             upload = yaml.load(file, Loader=yaml.FullLoader)
             pprint(upload)
 
