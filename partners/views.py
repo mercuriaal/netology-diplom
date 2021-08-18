@@ -1,10 +1,7 @@
 import yaml
-import os
-from pprint import pprint
 
 from django.db.models import Sum, F
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.mixins import UpdateModelMixin
@@ -78,7 +75,8 @@ class UploadProduct(APIView):
 
                 for name, value in item['parameters'].items():
                     parameter, _ = Parameter.objects.get_or_create(name=name)
-                    prod_param, _ = ProductParameter.objects.get_or_create(product_info=product_info, parameter=parameter,
+                    prod_param, _ = ProductParameter.objects.get_or_create(product_info=product_info,
+                                                                           parameter=parameter,
                                                                            value=value)
 
             products_update.send(sender=self.__class__, user_id=request.user.id)
