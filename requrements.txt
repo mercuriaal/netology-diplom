@@ -8,3 +8,5 @@ pytest-django==4.4.0
 pyyaml==5.4.1
 django-filter==2.4.0
 django-rest-passwordreset==1.2.0
+celery==5.1.2
+redis==3.5.3

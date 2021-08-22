@@ -1,4 +1,3 @@
-from django.core.mail import send_mail
 from django.db.models.signals import post_save
 from django.dispatch import receiver, Signal
 
@@ -7,6 +6,7 @@ from rest_framework.authtoken.models import Token
 from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset
 
 from users.models import Account
+from users.tasks import send_email_task
 
 new_order = Signal(providing_args=['user_id'])
 order_confirmation = Signal(providing_args=['user_id'])
@@ -22,7 +22,7 @@ def create_token(instance=None, created=False, **kwargs):
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, **kwargs):
 
-    send_mail(
+    send_email_task.delay(
         f"Password Reset Token for {reset_password_token.user}",
         reset_password_token.key,
         settings.EMAIL_HOST_USER,
@@ -34,11 +34,12 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
 @receiver(post_password_reset)
 def password_changed(sender, user, **kwargs):
 
-    send_mail(f"Password reset confirmation for {user}",
-              'Password has been changed',
-              settings.EMAIL_HOST_USER,
-              [user.email]
-              )
+    send_email_task.delay(
+        f"Password reset confirmation for {user}",
+        'Password has been changed',
+        settings.EMAIL_HOST_USER,
+        [user.email]
+    )
 
 
 @receiver(new_order)
@@ -50,11 +51,12 @@ def new_order_signal(user_id, **kwargs):
 
     partner_emails = [partner.email for partner in partner_receivers]
 
-    send_mail('Оформлен новый заказ',
-              'Заказ сформирован',
-              settings.EMAIL_HOST_USER,
-              partner_emails
-              )
+    send_email_task.delay(
+        'Оформлен новый заказ',
+        'Заказ сформирован',
+        settings.EMAIL_HOST_USER,
+        partner_emails
+    )
 
 
 @receiver(order_confirmation)
@@ -62,11 +64,12 @@ def order_confirmation_signal(user_id, **kwargs):
 
     user = Account.objects.get(id=user_id)
 
-    send_mail('Подтверждение заказа',
-              'Ваш заказ принят',
-              settings.EMAIL_HOST_USER,
-              [user.email]
-              )
+    send_email_task.delay(
+        'Подтверждение заказа',
+        'Ваш заказ принят',
+        settings.EMAIL_HOST_USER,
+        [user.email]
+    )
 
 
 @receiver(products_update)
@@ -74,8 +77,9 @@ def products_update_signal(user_id, **kwargs):
 
     user = Account.objects.get(id=user_id)
 
-    send_mail('Обновления прайса',
-              f'Пользователь {user} обновил данные о своих товарах',
-              settings.EMAIL_HOST_USER,
-              [settings.EMAIL_HOST_USER]
-              )
+    send_email_task.delay(
+        'Обновления прайса',
+        f'Пользователь {user} обновил данные о своих товарах',
+        settings.EMAIL_HOST_USER,
+        [settings.EMAIL_HOST_USER]
+    )
