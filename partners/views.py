@@ -37,6 +37,7 @@ class UploadProduct(APIView):
 
     permission_classes = [IsAuthenticated, Partner]
     authentication_classes = [TokenAuthentication]
+    throttle_scope = 'uploads'
 
     def post(self, request):
 
@@ -79,7 +80,7 @@ class UploadProduct(APIView):
                                                                            parameter=parameter,
                                                                            value=value)
 
-            products_update.send(sender=self.__class__, user_id=request.user.id)
+            # products_update.send(sender=self.__class__, user_id=request.user.id)
 
         else:
             raise ValidationError('Пользователь не привязан к магазину')
