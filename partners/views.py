@@ -20,6 +20,10 @@ from users.signals import products_update
 
 class PartnerStateView(ListAPIView, UpdateModelMixin):
 
+    """
+    Класс для просмотра и изменения статуса приёма заказов у поставщиков
+    """
+
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, Owner, Partner]
     serializer_class = ShopSerializer
@@ -34,6 +38,10 @@ class PartnerStateView(ListAPIView, UpdateModelMixin):
 
 
 class UploadProduct(APIView):
+
+    """
+    Класс для загрузки информации о товарах поставщиком
+    """
 
     permission_classes = [IsAuthenticated, Partner]
     authentication_classes = [TokenAuthentication]
@@ -80,7 +88,7 @@ class UploadProduct(APIView):
                                                                            parameter=parameter,
                                                                            value=value)
 
-            # products_update.send(sender=self.__class__, user_id=request.user.id)
+            products_update.send(sender=self.__class__, user_id=request.user.id)
 
         else:
             raise ValidationError('Пользователь не привязан к магазину')
@@ -88,6 +96,10 @@ class UploadProduct(APIView):
 
 
 class PartnerOrders(ListAPIView):
+
+    """
+    Класс для просмотра заказов, оформленных на поставщика
+    """
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, Partner]

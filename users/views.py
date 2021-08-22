@@ -1,4 +1,3 @@
-from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +11,10 @@ from .serializers import RegisterSerializer, ContactSerializer
 
 @api_view(['POST'])
 def registration_view(request):
+
+    """
+    Регистрация пользователей
+    """
 
     serializer = RegisterSerializer(data=request.data)
     data = {}
@@ -31,6 +34,10 @@ def registration_view(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
+
+    """
+    Выход из системы
+    """
 
     request.user.auth_token.delete()
     return Response('Пользователь успешно вышел из системы')

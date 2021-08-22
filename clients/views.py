@@ -19,6 +19,10 @@ from users.signals import new_order, order_confirmation
 
 class ProductInfoView(ListAPIView):
 
+    """
+    Класс для просмотра актуальных товаров покупателями
+    """
+
     queryset = ProductInfo.objects.filter(shop__state=True).select_related(
         'shop', 'product__category').prefetch_related(
         'product_parameters__parameter').distinct()
@@ -31,6 +35,10 @@ class ProductInfoView(ListAPIView):
 
 
 class BasketView(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMixin, DestroyModelMixin):
+
+    """
+    Класс для просмотра корзины и добавления в неё товаров
+    """
 
     permission_classes = [IsAuthenticated, Client]
     authentication_classes = [TokenAuthentication]
@@ -70,6 +78,10 @@ class BasketView(GenericViewSet, ListModelMixin, CreateModelMixin, UpdateModelMi
 
 
 class OrderView(GenericViewSet, ListModelMixin, UpdateModelMixin):
+
+    """
+    Класс для просмотра и оформления заказов покупателями
+    """
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, Client]
