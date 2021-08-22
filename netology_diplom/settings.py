@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_filters',
     'django_rest_passwordreset',
+    'drf_spectacular',
 
     'users',
     'partners',
@@ -153,7 +154,8 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'uploads': '1/day'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -170,3 +172,10 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
+
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API Сервиса заказа товаров для розничных сетей',
+    'DESCRIPTION': 'Приложение предназначено для автоматизации закупок в розничной сети.',
+    'VERSION': '1.0.0',
+}
